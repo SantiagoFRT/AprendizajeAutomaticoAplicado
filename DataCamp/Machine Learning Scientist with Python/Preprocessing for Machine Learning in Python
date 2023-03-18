@@ -1,0 +1,801 @@
+########################################## Preprocessing for Machine Learning in Python ################################
+############ March 14, 2023 ###############
+
+
+###################################### 1. Introduction to Data Preprocessing ################################
+
+#Exploring missing data
+#You've been given a dataset comprised of volunteer information from New York City, 
+#stored in the volunteer DataFrame. Explore the dataset using the plethora of
+#methods and attributes pandas has to offer to answer the following question.
+
+#How many missing values are in the locality column?
+
+[ ]665
+
+[ ]595
+
+[X]70
+
+[ ]35
+
+In [4]:
+volunteer['locality'].isna().sum()
+Out[4]:
+70
+
+
+################### Dropping missing data ########################
+
+# Drop the Latitude and Longitude columns from volunteer
+volunteer_cols = volunteer.drop(["Latitude", "Longitude"], axis=1)
+
+# Drop rows with missing category_desc values from volunteer_cols
+volunteer_subset = volunteer_cols.dropna(subset=["category_desc"])
+
+# Print out the shape of the subset
+print(volunteer_subset.shape)
+
+
+
+
+################## Exploring data types ###############
+# Taking another look at the dataset comprised of volunteer information
+from New York City, you want to know what types you'll be working with as you start to do more preprocessing.
+
+Which data types are present in the volunteer dataset?
+
+
+[ ]Floats and integers only
+
+[ ]Integers only
+
+[x]Floats, integers, and objects
+
+[ ]Floats only
+
+
+
+#################### Converting a column type ###################
+
+# Print the head of the hits column
+print(volunteer["hits"].head())
+
+# Convert the hits column to type int
+volunteer["hits"] = volunteer["hits"].astype("int")
+
+# Look at the dtypes of the dataset
+print(volunteer.dtypes)
+
+
+
+
+####################### Class imbalance ################3
+# In the volunteer dataset, you're thinking about trying to predict the 
+# category_desc variable using the other features in the dataset. First, though, you need to know what the class distribution (and imbalance) is for that label.
+
+# Which descriptions occur less than 50 times in the volunteer dataset?
+
+
+[ ]Emergency Preparedness
+
+[ ]Health
+
+[ ]Environment
+
+[X]Environment and Emergency Preparedness
+
+[ ]All of the above
+
+
+Correct! Both Emergency Preparedness and Environment occur less than 50 times.
+
+
+############### Stratified sampling #############
+
+# Create a DataFrame with all columns except category_desc
+X = volunteer.drop("category_desc", axis=1)
+
+# Create a category_desc labels dataset
+y = volunteer[["category_desc"]]
+
+# Use stratified sampling to split up the dataset according to the y dataset
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
+
+# Print the category_desc counts from y_train
+print(y_train["category_desc"].value_counts())
+
+
+Great job! You'll use train_test_split() frequently while building models, so it's useful to be familiar with the function.
+
+
+
+
+
+
+############################################### 2. Standardizing Data ########################################################
+
+
+# When to standardize
+# Now that you've learned when it is appropriate to standardize your data, which of these scenarios is NOT a reason to standardize?
+
+
+[ ]A column you want to use for modeling has extremely high variance.
+
+
+[ ]You have a dataset with several continuous columns on different scales, and you'd like to use a linear model to train the data.
+
+
+[ ]The models you're working with use some sort of distance metric in a linear space.
+
+
+[X]Your dataset is comprised of categorical data.
+
+
+Correct! Standardization is a preprocessing task performed on numerical, continuous data.
+
+
+
+
+
+################# Modeling without normalizing #####################
+
+# Split the dataset into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
+
+knn = KNeighborsClassifier()
+
+# Fit the knn model to the training data
+knn.fit(X_train, y_train)
+
+# Score the model on the test data
+print(knn.score(X_test, y_test))
+
+Great work. You can see that the accuracy score is pretty low. Let's explore methods to improve this score.
+
+
+
+
+
+# Checking the variance
+# Check the variance of the columns in the wine dataset. Out of the four columns listed, which column is the most appropriate candidate for normalization?
+
+
+[ ]Alcohol
+
+[X]Proline
+
+[ ]Proanthocyanins
+
+[ ]Ash
+
+
+Correct! The Proline column has an extremely high variance.
+
+
+
+###################### Log normalization in Python ##############
+
+# Print out the variance of the Proline column
+print(wine.var()["Proline"])
+
+# Apply the log normalization function to the Proline column
+wine["Proline_log"] = np.log(wine["Proline"])
+
+# Check the variance of the normalized Proline column
+print(wine.var()["Proline_log"])
+
+Nice work! The np.log() function is an easy way to log normalize a column.
+
+
+
+############################ Scaling data - investigating columns ##########################
+
+
+You want to use the Ash, Alcalinity of ash, and Magnesium columns in the wine dataset to train a linear model, but it's possible that these columns are all measured in different ways, which would bias a linear model.
+
+Which of the following statements are true about these columns is true?
+
+
+[ ]The standard deviation of Alcohol is greater than the standard deviation of Malic acid.
+
+[ ]The standard deviations of Ash and Alcalinity of ash are equal.
+
+[X]The max of Ash is 3.23, the max of Alcalinity of ash is 30, and the max of Magnesium is 162.
+
+[ ]The mean Malic acid is greater than the mean Ash
+
+Correct! Understanding your data is a crucial first step before
+deciding on the most appropriate standardization technique.
+
+
+
+
+################ Scaling data - standardizing columns ######################
+
+# Import StandardScaler
+from sklearn.preprocessing import StandardScaler
+
+# Create the scaler
+scaler = StandardScaler()
+
+# Subset the DataFrame you want to scale 
+wine_subset = wine[["Ash","Alcalinity of ash","Magnesium"]]
+
+# Apply the scaler to wine_subset
+wine_subset_scaled = scaler.fit_transform(wine_subset)
+
+Good job! In scikit-learn, running .fit_transform() during preprocessing
+will both fit the method to the data as well as transform the data in a single step.
+
+
+################### KNN on non-scaled data ##################
+
+# Split the dataset and labels into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
+
+# Fit the k-nearest neighbors model to the training data
+knn.fit(X_train, y_train)
+
+# Score the model on the test data
+print(knn.score(X_test, y_test))
+
+Well done! This accuracy definitely isn't poor, but let's see if we can improve it by standardizing the data.
+
+
+
+################  KNN on scaled data ####################
+
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
+
+# Instantiate a StandardScaler
+scaler = StandardScaler()
+
+# Scale the training and test features
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# Fit the k-nearest neighbors model to the training data
+knn.fit(X_train_scaled, y_train)
+
+# Score the model on the test data
+print(knn.score(X_test_scaled, y_test))
+
+Excellent! That's quite the improvement, and definitely made scaling the data worthwhile.
+
+
+
+########################## 3. Feature Engineering ######################################
+
+
+############ Feature engineering knowledge test
+# Now that you've learned about feature engineering, which of the following examples are good candidates for creating new features?
+
+[ ]A column of timestamps
+
+
+[ ]A column of newspaper headlines
+
+
+[ ]A column of weight measurements
+
+
+[X]1 and 2
+
+
+[ ]None of the above
+
+Correct! Timestamps can be broken into days or months, and headlines can be used for natural language processing.
+
+
+########## Identifying areas for feature engineering ########3
+# Take an exploratory look at the volunteer dataset.
+
+# Which of the following columns would you want to perform a feature engineering task on?
+
+
+[ ]vol_requests
+
+[ ]title
+
+[ ]created_date
+
+[ ]category_desc
+
+[X]2, 3, and 4
+
+Correct! All three of these columns will require some feature engineering before modeling.
+
+
+
+######################### Encoding categorical variables - binary ########################
+
+# Set up the LabelEncoder object
+enc = LabelEncoder()
+
+# Apply the encoding to the "Accessible" column
+hiking["Accessible_enc"] = enc.fit_transform(hiking["Accessible"])
+
+# Compare the two columns
+print(hiking[["Accessible", "Accessible_enc"]].head())
+
+Nice work! .fit_transform() is a good way to both fit an encoding and transform the data in a single step.
+
+
+
+################# Encoding categorical variables - one-hot ###################
+
+# Transform the category_desc column
+category_enc = pd.get_dummies((volunteer["category_desc"])
+
+# Take a look at the encoded columns
+print(category_enc)
+
+
+Good job! get_dummies() is a simple and quick way to encode categorical variables.
+
+
+
+################## Aggregating numerical features ######################
+
+# Use .loc to create a mean column
+running_times_5k["mean"] = running_times_5k.loc[:, "run1":"run5"].mean(axis=1)
+
+# Take a look at the results
+print(running_times_5k.head())
+
+Nice work! .loc[] is especially helpful for operating across columns.
+
+
+
+###################### Extracting datetime components #######################
+
+# First, convert string column to date column
+volunteer["start_date_converted"] = pd.to_datetime(volunteer["start_date_date"])
+
+# Extract just the month from the converted column
+volunteer["start_date_month"] = volunteer["start_date_converted"].dt.month
+
+# Take a look at the converted and new month columns
+print(volunteer[["start_date_converted", "start_date_month"]].head())
+
+Awesome! You can also use attributes like .day to get the day and .year to get the year from datetime columns.
+
+
+
+################# Extracting string patterns ######################
+
+# Write a pattern to extract numbers and decimals
+def return_mileage(length):
+    
+    # Search the text for matches
+    mile = re.search("\d+\.\d+", length)
+    
+    # If a value is returned, use group(0) to return the found value
+    if mile is not None:
+        return float(mile.group(0))
+        
+# Apply the function to the Length column and take a look at both columns
+hiking["Length_num"] = hiking["Length"].apply(return_mileage)
+print(hiking[["Length", "Length_num"]].head())
+
+
+Great job! Regular expressions are a useful way to perform text extraction.
+
+
+
+####################### Vectorizing text ############################
+
+# Take the title text
+title_text = volunteer["title"]
+
+# Create the vectorizer method
+tfidf_vec = TfidfVectorizer()
+
+# Transform the text into tf-idf vectors
+text_tfidf = tfidf_vec.fit_transform(title_text)
+
+
+Nice job. scikit-learn provides several methods for text vectorization
+
+
+
+######################## Text classification using tf/idf vectors ##########################
+
+# Split the dataset according to the class distribution of category_desc
+y = volunteer["category_desc"]
+X_train, X_test, y_train, y_test = train_test_split(text_tfidf.toarray(), y, stratify=y, random_state=42)
+
+# Fit the model to the training data
+nb.fit(X_train, y_train)
+
+# Print out the model's accuracy
+print(nb.score(X_test, y_test))
+
+Nice work! Notice that the model doesn't score very well. We'll work on selecting the best features for modeling in the next chapter.
+
+
+############################################## 4. Selecting Features for Modeling ###################################
+
+
+
+# When to use feature selection
+# You've finished standardizing your data and creating new features. Which of the following scenarios is NOT a good candidate for feature selection?
+
+
+[ ]Several columns of running times have been averaged into a new column
+
+
+[X]A text field that hasn't been turned into a tf/idf vector yet
+
+
+[ ]A column of text that has had a float extracted from it
+
+
+[ ]A categorical field that has been one-hot encoded
+
+
+[ ]There are columns related to whether something is a fruit or vegetable, the name of the fruit or vegetable, and the scientific name of the plant
+
+
+Correct! The text field needs to be vectorized before removing it, otherwise we might lose important data.
+
+
+
+
+
+
+################### Identifying areas for feature selection #################
+# Take an exploratory look at the hiking dataset, which has already had a few different feature engineering techniques applied to it.
+
+# During the feature selection process, which of the following columns could be removed?
+
+
+
+[ ]Length
+
+[ ]Difficulty
+
+[ ]Accessible
+
+[X]All of the above
+
+[ ]None of the above
+
+
+Correct! All three of these columns are good candidates for removal during feature selection.
+
+
+
+################ Selecting relevant features #################
+
+# Create a list of redundant column names to drop
+to_drop = ["category_desc", "created_date", "locality", "region", "vol_requests"]
+
+# Drop those columns from the dataset
+volunteer_subset = volunteer.drop(to_drop, axis=1)
+
+# Print out the head of volunteer_subset
+print(volunteer_subset.head())
+
+
+Nice job! It's often easier to collect a list of columns to drop, rather than dropping them individually.
+
+
+
+
+################ Checking for correlated features ########################
+
+# Print out the column correlations of the wine dataset
+print(wine.corr())
+
+# Drop that column from the DataFrame
+wine = wine.drop("Flavanoids", 1)
+
+print(wine.head())
+
+
+Good work! Dropping correlated features is often an iterative process,
+so you may need to try different combinations in your model.
+
+
+
+########################### Exploring text vectors, part 1 ##############################
+
+# Add in the rest of the arguments
+def return_weights(vocab, original_vocab, vector, vector_index, top_n):
+    zipped = dict(zip(vector[vector_index].indices, vector[vector_index].data))
+    
+    # Transform that zipped dict into a series
+    zipped_series = pd.Series({vocab[i]:zipped[i] for i in vector[vector_index].indices})
+    
+    # Sort the series to pull out the top n weighted words
+    zipped_index = zipped_series.sort_values(ascending=False)[:top_n].index
+    return [original_vocab[i] for i in zipped_index]
+
+# Print out the weighted words
+print(return_weights(vocab, tfidf_vec.vocabulary_, text_tfidf, 8, 3))
+
+Nice job! This is a little complicated, but you'll see how it comes together in the next exercise.
+
+
+
+
+
+######################### Exploring text vectors, part 2 #############################
+
+def words_to_filter(vocab, original_vocab, vector, top_n):
+    filter_list = []
+    for i in range(0, vector.shape[0]):
+    
+        # Call the return_weights function and extend filter_list
+        filtered = return_weights(vocab, original_vocab, vector, i, top_n)
+        filter_list.extend(filtered)
+        
+    # Return the list in a set, so we don't get duplicate word indices
+    return set(filter_list)
+
+# Call the function to get the list of word indices
+filtered_words = words_to_filter(vocab, tfidf_vec.vocabulary_, text_tfidf, 3)
+
+# Filter the columns in text_tfidf to only those in filtered_words
+filtered_text = text_tfidf[:, list(filtered_words)]
+
+Excellent! In the next exercise, you'll train a model using the filtered vector.
+
+
+############### Training Naive Bayes with feature selection ###########################
+
+# Split the dataset according to the class distribution of category_desc
+X_train, X_test, y_train, y_test = train_test_split(filtered_text.toarray(), y, stratify=y, random_state=42)
+
+# Fit the model to the training data
+nb.fit(X_train, y_train)
+
+# Print out the model's accuracy
+print(nb.score(X_test, y_test))
+
+Awesome! You can see that our accuracy score wasn't that different
+from the score at the end of Chapter 3. But don't worry,
+this is mainly because of how small the title field is.
+
+
+
+
+# Instantiate a PCA object
+pca = PCA()
+
+# Define the features and labels from the wine dataset
+X = wine.drop("Type", axis=1)
+y = wine["Type"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
+
+# Apply PCA to the wine dataset X vector
+pca_X_train = pca.fit_transform(X_train)
+pca_X_test = pca.fit_transform(y_train)
+
+# Look at the percentage of variance explained by the different components
+print(pca.explained_variance_ratio_)
+
+
+
+########################## Using PCA ##############################
+
+# Instantiate a PCA object
+pca = PCA()
+
+# Define the features and labels from the wine dataset
+X = wine.drop("Type", axis=1)
+y = wine["Type"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
+
+# Apply PCA to the wine dataset
+pca_X_train = pca.fit_transform(X_train)
+pca_X_test = pca.transform(X_test)
+
+# Look at the percentage of variance explained by the different components
+print(pca.explained_variance_ratio_)
+
+
+Excellent! In the next exercise, you'll train a model using the PCA-transformed vector.
+
+
+
+##################### Training a model with PCA ###############################
+
+# Fit knn to the training data
+knn.fit(pca_X_train, y_train)
+
+# Score knn on the test data and print it out
+print(knn.score(pca_X_test, y_test))
+
+
+Good work! PCA turned out to be a good choice for the wine dataset.
+
+
+########################################### 5. Putting It All Together ###############################################
+
+
+################## Checking column types ############
+
+# Print the DataFrame info
+print(ufo.info())
+
+# Change the type of seconds to float
+ufo["seconds"] = ufo["seconds"].astype(float)
+
+# Change the date column to type datetime
+ufo["date"] = pd.to_datetime(ufo["date"])
+
+# Check the column types
+print(ufo.info())
+
+
+Nice job on transforming the column types! This will make feature engineering and standardization much easier.
+
+
+############ Dropping missing data #################
+
+# Count the missing values in the length_of_time, state, and type columns, in that order
+print(ufo[["length_of_time", "state", "type"]].isna().sum())
+
+# Drop rows where length_of_time, state, or type are missing
+ufo_no_missing = ufo.dropna(subset=["length_of_time", "state", "type"])
+
+# Print out the shape of the new dataset
+print(ufo_no_missing.shape)
+
+Awesome! We'll work with this set going forward.
+
+
+
+################## Extracting numbers from strings ################
+
+def return_minutes(time_string):
+    
+    # Search for numbers in time_string
+    num = re.search("\d+", time_string)
+    if num is not None:
+        return int(num.group(0))
+        
+# Apply the extraction to the length_of_time column
+ufo["minutes"] = ufo["length_of_time"].apply(return_minutes)
+
+# Take a look at the head of both of the columns
+print(ufo[["length_of_time", "minutes"]].head())
+
+Nice job! The minutes information is now in a form where it can be inputted into a model.
+
+
+################ Identifying features for standardization #################
+
+# Check the variance of the seconds and minutes columns
+print(ufo[["seconds", "minutes"]].var())
+
+# Log normalize the seconds column
+ufo["seconds_log"] = np.log(ufo["seconds"])
+
+# Print out the variance of just the seconds_log column
+print(ufo["seconds_log"].var())
+
+Good work! Now it's time to engineer new features in the ufo dataset.
+
+
+
+#################### Encoding categorical variables ###############
+
+# Use pandas to encode us values as 1 and others as 0
+ufo["country_enc"] = ufo["country"].apply(lambda val: 1 if val == "us" else 0)
+
+# Print the number of unique type values
+print(len(ufo["type"].unique()))
+
+# Create a one-hot encoded set of the type values
+type_set = pd.get_dummies(ufo["type"])
+
+# Concatenate this set back to the ufo DataFrame
+ufo = pd.concat([ufo, type_set], axis=1)
+
+Awesome work! Let's continue on by extracting date components.
+
+
+###################  Features from dates #####################
+
+# Look at the first 5 rows of the date column
+print(ufo["date"].head())
+
+# Extract the month from the date column
+ufo["month"] = ufo["date"].dt.month
+
+# Extract the year from the date column
+ufo["year"] = ufo["date"].dt.year
+
+# Take a look at the head of all three columns
+print(ufo[["date", "month", "year"]].head())
+
+
+
+Nice job on extracting dates! The pandas series attributes .dt.month and .dt.year are extremely useful for extraction tasks.
+
+
+
+################# Text vectorization ###################
+
+# Take a look at the head of the desc field
+print(ufo["desc"].head())
+
+# Instantiate the tfidf vectorizer object
+vec = TfidfVectorizer()
+
+# Fit and transform desc using vec
+desc_tfidf = vec.fit_transform(ufo["desc"])
+
+# Look at the number of columns and rows
+print(desc_tfidf.shape)
+
+Great! You'll notice that the text vector has a large number of columns.
+We'll work on selecting the features we want to use for modeling in the next section.
+
+
+
+
+################ Selecting the ideal dataset ####################
+
+# Make a list of features to drop   
+to_drop = ["city", "country", "date", "desc", "lat", "length_of_time", "long", "minutes", "recorded", "seconds", "state"]
+
+# Drop those features
+ufo_dropped = ufo.drop(to_drop, axis=1)
+
+# Let's also filter some words out of the text vector we created
+filtered_words = words_to_filter(vocab, vec.vocabulary_, desc_tfidf, 4)
+
+
+Great job! You're almost done. In the next exercises, you'll model the UFO data in a couple of different ways.
+
+
+
+############## Modeling the UFO dataset, part 1 ######################
+
+# Take a look at the features in the X set of data
+print(X.columns)
+
+# Split the X and y sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, random_state=42)
+
+# Fit knn to the training sets
+knn.fit(X_train, y_train)
+
+# Print the score of knn on the test sets
+print(knn.score(X_test, y_test))
+
+
+Awesome work! This model performs pretty well. It seems like you've made pretty good feature selection choices here.
+
+
+
+
+################ Modeling the UFO dataset, part 2 #########################
+
+# Use the list of filtered words we created to filter the text vector
+filtered_text = desc_tfidf[:, list(filtered_words)]
+
+# Split the X and y sets using train_test_split, setting stratify=y 
+X_train, X_test, y_train, y_test = train_test_split(filtered_text.toarray(), y, stratify=y, random_state=42)
+
+# Fit nb to the training sets
+nb.fit(X_train, y_train)
+
+# Print the score of nb on the test sets
+print(nb.score(X_test, y_test))
+
+
+Congrats, you've completed the course! As you can see, this model performs very poorly on
+this text data. This is a clear case where iteration would be necessary to figure
+out what subset of text improves the model, and if perhaps any of the other features are useful in predicting type.
+
+
+
