@@ -475,4 +475,119 @@ model_data = model_data.filter("arr_delay is not NULL and dep_delay is not NULL 
 #Awesome! Now you've defined the column that you're going to use as the outcome in your model.
 
 
+#####  Strings and factors ####
+
+As you know, Spark requires numeric data for modeling. So far this hasn't been an issue; even boolean columns can easily be converted to integers without any trouble. But you'll also be using the airline and the plane's destination as features in your model. These are coded as strings and there isn't any obvious way to convert them to a numeric data type.
+
+Fortunately, PySpark has functions for handling this built into the pyspark.ml.features submodule. You can create what are called 'one-hot vectors' to represent the carrier and the destination of each flight. A one-hot vector is a way of representing a categorical feature where every observation has a vector in which all elements are zero except for at most one element, which has a value of one (1).
+
+Each element in the vector corresponds to a level of the feature, so it's possible to tell what the right level is by seeing which element of the vector is equal to one (1).
+
+The first step to encoding your categorical feature is to create a StringIndexer. Members of this class are Estimators that take a DataFrame with a column of strings and map each unique string to a number. Then, the Estimator returns a Transformer that takes a DataFrame, attaches the mapping to it as metadata, and returns a new DataFrame with a numeric column corresponding to the string column.
+
+The second step is to encode this numeric column as a one-hot vector using a OneHotEncoder. This works exactly the same way as the StringIndexer by creating an Estimator and then a Transformer. The end result is a column that encodes your categorical feature as a vector that's suitable for machine learning routines!
+
+This may seem complicated, but don't worry! All you have to remember is that you need to create a StringIndexer and a OneHotEncoder, and the Pipeline will take care of the rest.
+
+Why do you have to encode a categorical feature as a one-hot vector?
+
+
+
+It makes fitting the model faster.
+
+
+Spark can only model numeric features.
+
+
+For compatibility with scikit-learn
+
+
+###### Carrier ######
+
+# Create a StringIndexer
+carr_indexer = StringIndexer(inputCol="carrier", outputCol="carrier_index")
+
+# Create a OneHotEncoder
+carr_encoder = OneHotEncoder(inputCol="carrier_index", outputCol="carrier_fact")
+
+# Fantastic work! You're ready to include this column in your model now!
+
+
+##### Destination #####
+
+# Create a StringIndexer
+dest_indexer = StringIndexer(inputCol="dest", outputCol="dest_index")
+
+# Create a OneHotEncoder
+dest_encoder = OneHotEncoder(inputCol="dest_index", outputCol="dest_fact")
+
+###### Assemble a vector #####
+
+# Make a VectorAssembler
+vec_assembler = VectorAssembler(inputCols=["month", "air_time", "carrier_fact", "dest_fact", "plane_age"], outputCol="features")
+
+
+###### Create the pipeline #####
+
+# Import Pipeline
+from pyspark.ml import Pipeline
+
+# Make the pipeline
+flights_pipe = Pipeline(stages=[dest_indexer, dest_encoder, carr_indexer, carr_encoder, vec_assembler])
+
+# Fantastic! You've made a fully reproducible machine learning pipeline!
+
+
+
+##### Test vs. Train #####
+After you've cleaned your data and gotten it ready for modeling, one of the most important steps is to split the data into a test set and a train set. After that, don't touch your test data until you think you have a good model! As you're building models and forming hypotheses, you can test them on your training data to get an idea of their performance.
+
+Once you've got your favorite model, you can see how well it predicts the new data in your test set. This never-before-seen data will give you a much more realistic idea of your model's performance in the real world when you're trying to predict or classify new data.
+
+In Spark it's important to make sure you split the data after all the transformations. This is because operations like StringIndexer don't always produce the same index even when given the same list of strings.
+
+Why is it important to use a test set in model evaluation?
+
+[ ]Evaluating your model improves its accuracy.
+
+[x]By evaluating your model with a test set you can get a good idea of performance on new data.
+
+[ ]Using a test set lets you check your code for errors.
+
+
+###### Transform the data #######
+
+# Fit and transform the data
+piped_data = flights_pipe.fit(model_data).transform(model_data)
+
+
+#### Split the data ######
+
+# Split the data into training and test sets
+training, test = piped_data.randomSplit([.6, .4])
+
+
+
+######################################################## Model tuning and selection ###############################################
+###### What is logistic regression? ######
+The model you'll be fitting in this chapter is called a logistic regression. This model is very similar to a linear regression, but instead of predicting a numeric variable, it predicts the probability (between 0 and 1) of an event.
+
+To use this as a classification algorithm, all you have to do is assign a cutoff point to these probabilities. If the predicted probability is above the cutoff point, you classify that observation as a 'yes' (in this case, the flight being late), if it's below, you classify it as a 'no'!
+
+You'll tune this model by testing different values for several hyperparameters. A hyperparameter is just a value in the model that's not estimated from the data, but rather is supplied by the user to maximize performance. For this course it's not necessary to understand the mathematics behind all of these values - what's important is that you'll try out a few different choices and pick the best one.
+
+Why do you supply hyperparameters?
+
+[ ]They explain information about the data.
+
+
+[x]They improve model performance.
+
+
+[ ]They improve model fitting speed.
+
+
+# Great job! You supply hyperparameters to optimize your model.
+
+
 
